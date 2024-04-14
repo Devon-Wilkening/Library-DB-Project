@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <p>Showing results for: {{ query }}</p>
+    <ul>
+        {% for item in results %}
+        <li>{{ item.title }} - {{ item.type }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

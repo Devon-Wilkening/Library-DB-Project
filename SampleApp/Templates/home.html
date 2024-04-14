@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <style>
+        .flash-message {
+            animation: fadeOut 5s forwards;
+            list-style-type: none; /* Remove bullet points */
+            color: green; /* Change text color */
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ user_info.first_name }}!</h1>
+    <p>This is your home page. You have access to the following functions:</p>
+    
+    <!-- Common functions available to all users -->
+    <ul>
+        <li>View Profile</li>
+        <li>Search Catalog</li>
+        <li><a href="/search">Search Library Items</a></li>
+        <!-- Add other common functions here -->
+    </ul>
+    
+    <!-- Librarian-specific functions -->
+    {% if user_info.user_type == 'librarian' %}
+    <p>Librarian-specific functions:</p>
+    <ul>
+        <li>Add New Book</li>
+        <li>Manage Library Inventory</li>
+        <li><a href="/add_librarian">Add Librarian</a></li>
+        <li><a href="/add_patron">Add Patron</a></li>
+        <li><a href="/add_lib_item">Add Library Item</a></li>
+        <!-- Add other librarian-specific functions here -->
+    </ul>
+    {% endif %}
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul>
+        {% for category, message in messages %}
+        <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    <script>
+        // Fade out flash messages after 5 seconds
+        document.querySelectorAll('.flash-message').forEach(function(message) {
+            setTimeout(function() {
+                message.style.display = 'none';
+            }, 5000);
+        });
+    </script>
+    {% endif %}
+    {% endwith %}
+
+    <!--logout-->
+    <p><a href="/logout">Logout</a></p>
+</body>
+</html>
