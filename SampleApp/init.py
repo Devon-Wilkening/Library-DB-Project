@@ -120,7 +120,7 @@ def sys_init():
             type TEXT,
             author_director_artist TEXT,
             genre TEXT,
-            availability BOOLEAN
+            available BOOLEAN
         )
     ''')
 
@@ -136,7 +136,7 @@ def sys_init():
        ('user2', password2_hash, 'Jane', 'Smith', 'jane@example.com',
         '0987654321', 'patron'))
    cursor.execute(
-       "INSERT INTO lib_items (title, type, author_director_artist, genre, availability) VALUES (?, ?, ?, ?, ?)",
+       "INSERT INTO lib_items (title, type, author_director_artist, genre, available) VALUES (?, ?, ?, ?, ?)",
        ('Book3', 'Book', 'Jane', 'Nonfiction', True))
 
    # Commit the changes

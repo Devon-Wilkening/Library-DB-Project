@@ -156,11 +156,11 @@ def search_results():
     if query:
         conn = sqlite3.connect('library.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM lib_items")
+        cursor.execute("SELECT * FROM lib_items WHERE title LIKE ?", ('%' + query + '%',))
         search_results = cursor.fetchall()
         conn.close()
-    print("Search Results", search_results)
     # Render the search results page with the search results
+    print("Search Results:", search_results)
     return render_template('search_results.html', query=query, results=search_results)
 
 @app.route('/profile')

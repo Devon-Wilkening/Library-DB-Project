@@ -10,7 +10,7 @@
     <p>Showing results for: {{ query }}</p>
     <ul>
         {% for item in results %}
-        <li>{{ item.title }} - {{ item.type }}</li>
+        <li>{{ item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} (Availability: {% if item[5] == 1 %}Available{% else %}Not Available{% endif %})</li>
         {% endfor %}
     </ul>
 </body>
