@@ -119,7 +119,7 @@ def sys_init():
             title TEXT,
             type TEXT,
             author_director_artist TEXT,
-            genre TEXT
+            genre TEXT,
             availability BOOLEAN
         )
     ''')
@@ -135,6 +135,9 @@ def sys_init():
        "INSERT INTO patrons (username, password, first_name, last_name, email, phone, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
        ('user2', password2_hash, 'Jane', 'Smith', 'jane@example.com',
         '0987654321', 'patron'))
+   cursor.execute(
+       "INSERT INTO lib_items (title, type, author_director_artist, genre, availability) VALUES (?, ?, ?, ?, ?)",
+       ('Book3', 'Book', 'Jane', 'Nonfiction', True))
 
    # Commit the changes
    conn.commit()

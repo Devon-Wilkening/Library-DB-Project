@@ -139,7 +139,7 @@ def submit_library_item():
     # Redirect to the home page (or any other relevant page)
     return redirect('/home')
 
-@app.route('/search', methods=['GET'])
+@app.route('/search')
 def search_page():
     return render_template('search.html')
 
@@ -147,21 +147,21 @@ def search_page():
 def search_results():
     # Get the search query from the URL query parameters
     query = request.args.get('q', '')
-
+    print("Search Query:", query)
     # Perform the search in your database
     # Here, you can use SQL queries or any other method to search for items based on the query
-   printf("got query:")
+
     # For example, if you're using SQLite, you can perform a LIKE query
     search_results = []
     if query:
         conn = sqlite3.connect('library.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM lib_items WHERE title LIKE ?", ('%' + query + '%',))
+        cursor.execute("SELECT * FROM lib_items")
         search_results = cursor.fetchall()
         conn.close()
-
+    print("Search Results", search_results)
     # Render the search results page with the search results
-    return render_template('search.html', query=query, results=search_results)
+    return render_template('search_results.html', query=query, results=search_results)
 
 @app.route('/profile')
 def profile():
