@@ -54,7 +54,7 @@ def add_patron(username, password, first_name, last_name, email, phone):
         if conn:
             conn.close()
 
-def add_lib_item(title, item_type, author_director_artist, genre, availability=True):
+def add_lib_item(title, item_type, author_director_artist, genre, available):
     try:
         # Connect to the SQLite database
         conn = sqlite3.connect('library.db')
@@ -62,8 +62,8 @@ def add_lib_item(title, item_type, author_director_artist, genre, availability=T
 
         # Insert the new library item into the lib_items table
         cursor.execute(
-            "INSERT INTO lib_items (title, type, author_director_artist, genre, availability) VALUES (?, ?, ?, ?, ?)",
-            (title, item_type, author_director_artist, genre, availability))
+            "INSERT INTO lib_items (title, type, author_director_artist, genre, available) VALUES (?, ?, ?, ?, ?)",
+            (title, item_type, author_director_artist, genre, available))
 
         # Commit the changes
         conn.commit()
@@ -74,6 +74,58 @@ def add_lib_item(title, item_type, author_director_artist, genre, availability=T
 
     finally:
         # Close the connection
+        if conn:
+            conn.close()
+
+def find_user_by_id(user_id):
+    try:
+        conn = sqlite3.connect('library.db')
+        cursor = conn.cursor()
+
+        query = "SELECT * FROM patrons WHERE id = ?"
+        cursor.execute(query, (user_id,))
+        patron_data = cursor.fetchone()
+
+            
+        query = "SELECT * FROM librarians WHERE id = ?"
+        cursor.execute(query, (user_id,))
+        librarian_data = cursor.fetchone()
+
+        if patron_data:
+            user_data = patron_data
+        elif librarian_data:
+            user_data = librarian_data
+                
+        return user_data
+    except Exception as e:
+        print("Error finding user:", e)
+        return None
+
+def find_checkouts_by_user_id(user_id):
+    try:
+        # Connect to the SQLite database
+        conn = sqlite3.connect('library.db')
+        cursor = conn.cursor()
+
+        # Execute a SQL query to retrieve checked out items by user ID
+        cursor.execute('''
+            SELECT lib_items.title, lib_items.type, lib_items.author_director_artist, lib_items.genre
+            FROM checkouts
+            INNER JOIN lib_items ON checkouts.item_id = lib_items.id
+            WHERE checkouts.user_id = ?
+        ''', (user_id,))
+
+        # Fetch all rows from the result set
+        checked_out_items = cursor.fetchall()
+
+        return checked_out_items
+
+    except sqlite3.Error as e:
+        print("Error finding checked out items by user ID:", e)
+        return None
+
+    finally:
+        # Close the database connection
         if conn:
             conn.close()
 
@@ -120,7 +172,7 @@ def sys_init():
             type TEXT,
             author_director_artist TEXT,
             genre TEXT,
-            available BOOLEAN
+            available INTEGER DEFAULT 0
         )
     ''')
 
@@ -137,7 +189,7 @@ def sys_init():
         '0987654321', 'patron'))
    cursor.execute(
        "INSERT INTO lib_items (title, type, author_director_artist, genre, available) VALUES (?, ?, ?, ?, ?)",
-       ('Book3', 'Book', 'Jane', 'Nonfiction', True))
+       ('Book3', 'Book', 'Jane', 'Nonfiction', '0'))
 
    # Commit the changes
    conn.commit()

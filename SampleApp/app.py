@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, flash
 from user_manage import login, User
 from init import sys_init
-from librarian import add_librarian, add_patron, add_lib_item
+from librarian import add_librarian, add_patron, add_lib_item, find_user_by_id, find_checkouts_by_user_id
 import sqlite3
 
 app = Flask(__name__)
@@ -92,7 +92,7 @@ def submit_librarian():
     add_librarian(username, password, first_name, last_name, email, phone)
     # Flash a success message
     flash('Librarian successfully added!', 'success')
-    # Redirect to the home page (or any other relevant page)
+    # Redirect to the home page
     return redirect('/home')
 
 @app.route('/add_patron')
@@ -139,11 +139,11 @@ def submit_library_item():
     # Redirect to the home page (or any other relevant page)
     return redirect('/home')
 
-@app.route('/search')
+@app.route('/item_search')
 def search_page():
-    return render_template('search.html')
+    return render_template('item_search.html')
 
-@app.route('/search_results')
+@app.route('/item_search_results')
 def search_results():
     # Get the search query from the URL query parameters
     query = request.args.get('q', '')
@@ -161,7 +161,60 @@ def search_results():
         conn.close()
     # Render the search results page with the search results
     print("Search Results:", search_results)
-    return render_template('search_results.html', query=query, results=search_results)
+    return render_template('item_search_results.html', query=query, results=search_results)
+
+# Flask route to display all users
+@app.route('/all_users')
+def all_users():
+    # Connect to the database and execute a query to fetch user data
+    conn = sqlite3.connect('library.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM patrons UNION SELECT * FROM librarians")
+    users_data = cursor.fetchall()
+
+    # Close the database connection
+    conn.close()
+
+    # Render a template and pass the user data to it
+    return render_template('all_users.html', users=users_data)
+
+@app.route('/user_search', methods=['GET', 'POST'])
+def search_user():
+   if request.method == 'POST':
+      user_id = request.form.get('user_id')
+      user = None
+      items_checked_out = None
+      # Query the database to find the user by ID
+        
+      user = find_user_by_id(user_id)
+      print(user)
+      if user:
+         # Query the database to find the items checked out by the user
+         # Assuming you have a function to retrieve checked out items by user ID
+         items_checked_out = find_checkouts_by_user_id(user_id)
+         print(items_checked_out)
+      return render_template('user_search_results.html', user=user, items_checked_out=items_checked_out)
+
+   return render_template('user_search.html')
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    # Get the item ID from the form data
+    item_id = request.form.get('item_id')
+
+    # Get the ID of the logged-in user (assuming you have implemented user authentication)
+    user_id = session.get('user_id')
+
+    # Update the availability of the item in the database
+    conn = sqlite3.connect('library.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (1, user_id, item_id))
+    conn.commit()
+    conn.close()
+
+    # Redirect the user back to the search results page
+    return redirect('/item_search_results?q=')  # Redirect to the search results page (empty query to refresh the page)
+
 
 @app.route('/profile')
 def profile():
@@ -176,13 +229,15 @@ def profile():
           first_name=user_data['first_name'],
           last_name=user_data['last_name'],
           email=user_data['email'],
-          phone=user_data['phone'])
+          phone=user_data['phone'],
+          user_type=user_data['user_type']
+          )
 
       print(user.email)
 
       return render_template('profile.html', user_info=user)
    else:
-      return redirect('/', messages="Please login again!")
+      return redirect('/home', messages="Error Occurred")
 
 @app.route('/logout')
 def logout():
