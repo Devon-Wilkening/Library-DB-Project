@@ -128,7 +128,7 @@ def submit_library_item():
     genre = request.form['genre']
     
     # Set availability to "Available" by default
-    availability = True
+    availability = 0
     
     # Add the new library item to the database
     add_lib_item(title, item_type, author_director_artist, genre, availability)
@@ -204,16 +204,66 @@ def checkout():
 
     # Get the ID of the logged-in user (assuming you have implemented user authentication)
     user_id = session.get('user_id')
+    
+    # Count how many items the user has already checked out
+    conn = sqlite3.connect('library.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM lib_items WHERE checked_out_by = ?", (user_id,))
+    num_checked_out = cursor.fetchone()[0]
+    conn.close()
+
+    # Check if the user has reached the maximum limit of checked out items
+    if num_checked_out >= 5:
+        flash("You have reached the maximum limit of checked out items (5).")
+        return redirect('/home')
+
+    # Proceed with the checkout
+    try:
+        conn = sqlite3.connect('library.db')
+        cursor = conn.cursor()
+
+        # Update the availability of the item in the database
+        cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (0, user_id, item_id))
+        conn.commit()
+        flash("Item checked out successfully!")
+    except sqlite3.Error as e:
+        print("Error checking out item:", e)
+        flash("Failed to check out item. Please try again later.")
+    finally:
+        if conn:
+            conn.close()
+
+    return redirect('/home')  # Redirect to the home page after checkout
+
+@app.route('/user_view_checkouts')
+def checkouts():
+    # Get the ID of the logged-in user
+    user_id = session.get('user.user_id')
+    print(session)
+    print(user_id)
+    # Fetch the checked out items for the user from the database
+    conn = sqlite3.connect('library.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM lib_items")
+    checked_out_items = cursor.fetchall()
+    conn.close()
+    print("Checkouts:", checked_out_items)
+    return render_template('user_view_checkouts.html', checked_out_items=checked_out_items)
+
+@app.route('/checkin', methods=['POST'])
+def checkin():
+    # Get the item ID to check in from the form data
+    item_id = request.form.get('item_id')
 
     # Update the availability of the item in the database
     conn = sqlite3.connect('library.db')
     cursor = conn.cursor()
-    cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (1, user_id, item_id))
+    cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = NULL WHERE id = ?", (0, item_id))
     conn.commit()
     conn.close()
 
-    # Redirect the user back to the search results page
-    return redirect('/item_search_results?q=')  # Redirect to the search results page (empty query to refresh the page)
+    # Redirect the user back to the checkouts page
+    return redirect('/user_view_checkouts')
 
 
 @app.route('/profile')

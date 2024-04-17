@@ -172,7 +172,8 @@ def sys_init():
             type TEXT,
             author_director_artist TEXT,
             genre TEXT,
-            available INTEGER DEFAULT 0
+            available INTEGER DEFAULT 0,
+            checked_out_by INTEGER DEFAULT 0
         )
     ''')
 

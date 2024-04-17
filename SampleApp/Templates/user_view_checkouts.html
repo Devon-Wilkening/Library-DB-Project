@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkouts</title>
+</head>
+<body>
+    <h1>Checkouts</h1>
+    <ul>
+        {% for item in checked_out_items %}
+        <li>{{ item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} 
+            {% if item[5] == 0 %}
+                (Availability: Available)
+            {% else %}
+                (Availability: Not Available)
+            {% endif %}
+            <form action="/checkin" method="post">
+                <input type="hidden" name="item_id" value="{{ item[0] }}">
+                <button type="submit">Check In</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
