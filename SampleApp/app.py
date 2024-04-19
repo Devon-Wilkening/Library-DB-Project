@@ -160,8 +160,9 @@ def search_results():
         search_results = cursor.fetchall()
         conn.close()
     # Render the search results page with the search results
+    user = session.get('user')
     print("Search Results:", search_results)
-    return render_template('item_search_results.html', query=query, results=search_results)
+    return render_template('item_search_results.html', query=query, results=search_results, user=user)
 
 # Flask route to display all users
 @app.route('/all_users')
@@ -201,10 +202,9 @@ def search_user():
 def checkout():
     # Get the item ID from the form data
     item_id = request.form.get('item_id')
-
-    # Get the ID of the logged-in user (assuming you have implemented user authentication)
-    user_id = session.get('user_id')
     
+    # Get the ID of the logged-in user (assuming you have implemented user authentication)
+    user_id = session['user']['id']
     # Count how many items the user has already checked out
     conn = sqlite3.connect('library.db')
     cursor = conn.cursor()
@@ -223,7 +223,7 @@ def checkout():
         cursor = conn.cursor()
 
         # Update the availability of the item in the database
-        cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (0, user_id, item_id))
+        cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (-1, user_id, item_id))
         conn.commit()
         flash("Item checked out successfully!")
     except sqlite3.Error as e:
@@ -238,13 +238,12 @@ def checkout():
 @app.route('/user_view_checkouts')
 def checkouts():
     # Get the ID of the logged-in user
-    user_id = session.get('user.user_id')
-    print(session)
-    print(user_id)
+    user_id = session['user']['id']
+    print("User id is:", user_id)
     # Fetch the checked out items for the user from the database
     conn = sqlite3.connect('library.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM lib_items")
+    cursor.execute("SELECT * FROM lib_items WHERE checked_out_by = ?", (user_id,))
     checked_out_items = cursor.fetchall()
     conn.close()
     print("Checkouts:", checked_out_items)

@@ -13,7 +13,7 @@
         <li>
             {{ item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} 
             (Availability: {% if item[5] == 0 %}Available{% else %}Not Available{% endif %})
-            {% if item[5] == 0 %}
+            {% if user.user_type == 'patron' and item[5] == 0 %}
             <form action="/checkout" method="POST">
                 <input type="hidden" name="item_id" value="{{ item[0] }}">
                 <button type="submit">Checkout</button>

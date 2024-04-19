@@ -9,17 +9,17 @@
     <h1>Search Result</h1>
     {% if user %}
         <h2>User Information</h2>
-        <p>User ID: {{ user.id }}</p>
-        <p>Username: {{ user.username }}</p>
-        <p>First Name: {{ user.first_name }}</p>
-        <p>Last Name: {{ user.last_name }}</p>
+        <p>User ID: {{ user[0] }}</p>
+        <p>Username: {{ user[1] }}</p>
+        <p>First Name: {{ user[3] }}</p>
+        <p>Last Name: {{ user[4] }}</p>
         <!-- Add more user information fields as needed -->
 
         {% if items_checked_out %}
             <h2>Items Checked Out</h2>
             <ul>
                 {% for item in items_checked_out %}
-                    <li>{{ item.title }} ({{ item.type }})</li>
+                    <li>{{ item[0] }} ({{ item[1] }})</li>
                 {% endfor %}
             </ul>
         {% else %}
