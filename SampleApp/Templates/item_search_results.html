@@ -8,12 +8,13 @@
 <body>
     <h1>Search Results</h1>
     <p>Showing results for: {{ query }}</p>
+    <p>All items are displayed as: Title - Type - Author/Director/Author - Genre (Availability)</p>
     <ul>
         {% for item in results %}
         <li>
-            {{ item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} 
-            (Availability: {% if item[5] == 0 %}Available{% else %}Not Available{% endif %})
-            {% if user.user_type == 'patron' and item[5] == 0 %}
+            {{item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} - {{ item[3] or 'Unknown Author/Director/Artist' }} - {{ item[4] or 'Unknown Genre' }} 
+            ({% if item[5] == 1 %}Available{% else %}Unavailable{% endif %})
+            {% if user.user_type == 'patron' and item[5] == 1 %}
             <form action="/checkout" method="POST">
                 <input type="hidden" name="item_id" value="{{ item[0] }}">
                 <button type="submit">Checkout</button>

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, flash
 from user_manage import login, User
-from init import sys_init
-from librarian import add_librarian, add_patron, add_lib_item, find_user_by_id, find_checkouts_by_user_id
+from init import sys_init, add_librarian, add_patron, add_lib_item, display_all_users, find_user_by_id, find_checkouts_by_user_id, checkout_library_item, checkin_library_items, get_checked_out_items, generate_unique_id 
+#import goes here
 import sqlite3
 
 app = Flask(__name__)
@@ -10,7 +10,6 @@ app.secret_key = 'your_secret_key'
 
 with app.app_context():
    sys_init()
-
 
 @app.route('/')
 def index():
@@ -126,12 +125,11 @@ def submit_library_item():
     item_type = request.form['item_type']
     author_director_artist = request.form['author_director_artist']
     genre = request.form['genre']
-    
     # Set availability to "Available" by default
-    availability = 0
+    available = True
     
     # Add the new library item to the database
-    add_lib_item(title, item_type, author_director_artist, genre, availability)
+    add_lib_item(title, item_type, author_director_artist, genre, available)
     
     # Flash a success message
     flash('Library item successfully added!', 'success')
@@ -145,58 +143,61 @@ def search_page():
 
 @app.route('/item_search_results')
 def search_results():
-    # Get the search query from the URL query parameters
-    query = request.args.get('q', '')
-    print("Search Query:", query)
-    # Perform the search in your database
-    # Here, you can use SQL queries or any other method to search for items based on the query
+    try:
+        # Get the search query from the URL query parameters
+        query = request.args.get('q', '')
 
-    # For example, if you're using SQLite, you can perform a LIKE query
-    search_results = []
-    if query:
-        conn = sqlite3.connect('library.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM lib_items WHERE title LIKE ?", ('%' + query + '%',))
-        search_results = cursor.fetchall()
-        conn.close()
-    # Render the search results page with the search results
-    user = session.get('user')
-    print("Search Results:", search_results)
-    return render_template('item_search_results.html', query=query, results=search_results, user=user)
+        # Perform the search in your database
+        # Here, you can use SQL queries or any other method to search for items based on the query
 
+        # For example, if you're using SQLite, you can perform a LIKE query
+        search_results = []
+
+        if query:
+            conn = sqlite3.connect('library.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM lib_items WHERE title LIKE ?", ('%' + query + '%',))
+            search_results = cursor.fetchall()
+            conn.close()
+
+        # Check if search_results is empty and display a flash message
+        if not search_results:
+            flash("No results found for your query.", 'error')
+
+        # Render the search results page with the search results
+        user = session.get('user')
+        return render_template('item_search_results.html', query=query, results=search_results, user=user)
+
+    except Exception as e:
+        # Handle any unexpected errors
+        flash("An unexpected error occurred: {}".format(e), 'error')
+        return redirect('/home')
 # Flask route to display all users
 @app.route('/all_users')
 def all_users():
-    # Connect to the database and execute a query to fetch user data
-    conn = sqlite3.connect('library.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM patrons UNION SELECT * FROM librarians")
-    users_data = cursor.fetchall()
-
-    # Close the database connection
-    conn.close()
-
+    
+    users_data = display_all_users()
     # Render a template and pass the user data to it
     return render_template('all_users.html', users=users_data)
 
 @app.route('/user_search', methods=['GET', 'POST'])
 def search_user():
-   if request.method == 'POST':
-      user_id = request.form.get('user_id')
-      user = None
-      items_checked_out = None
-      # Query the database to find the user by ID
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        user = None
+        items_checked_out = None
+        # Query the database to find the user by ID
         
-      user = find_user_by_id(user_id)
-      print(user)
-      if user:
-         # Query the database to find the items checked out by the user
-         # Assuming you have a function to retrieve checked out items by user ID
-         items_checked_out = find_checkouts_by_user_id(user_id)
-         print(items_checked_out)
-      return render_template('user_search_results.html', user=user, items_checked_out=items_checked_out)
-
-   return render_template('user_search.html')
+        user = find_user_by_id(user_id)
+        print(user)
+        if user:
+            # Query the database to find the items checked out by the user
+            # Assuming you have a function to retrieve checked out items by user ID
+            items_checked_out = find_checkouts_by_user_id(user_id)
+            print(items_checked_out)
+        return render_template('user_search_results.html', user=user, items_checked_out=items_checked_out)
+    
+    return render_template('user_search.html')
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -205,33 +206,14 @@ def checkout():
     
     # Get the ID of the logged-in user (assuming you have implemented user authentication)
     user_id = session['user']['id']
-    # Count how many items the user has already checked out
-    conn = sqlite3.connect('library.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM lib_items WHERE checked_out_by = ?", (user_id,))
-    num_checked_out = cursor.fetchone()[0]
-    conn.close()
+    
+    # Call the checkout function
+    success, message = checkout_library_item(user_id, item_id)
 
-    # Check if the user has reached the maximum limit of checked out items
-    if num_checked_out >= 5:
-        flash("You have reached the maximum limit of checked out items (5).")
-        return redirect('/home')
-
-    # Proceed with the checkout
-    try:
-        conn = sqlite3.connect('library.db')
-        cursor = conn.cursor()
-
-        # Update the availability of the item in the database
-        cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = ? WHERE id = ?", (-1, user_id, item_id))
-        conn.commit()
-        flash("Item checked out successfully!")
-    except sqlite3.Error as e:
-        print("Error checking out item:", e)
-        flash("Failed to check out item. Please try again later.")
-    finally:
-        if conn:
-            conn.close()
+    if not success:
+        flash(message)
+    else:
+        flash(message, 'success')
 
     return redirect('/home')  # Redirect to the home page after checkout
 
@@ -239,14 +221,10 @@ def checkout():
 def checkouts():
     # Get the ID of the logged-in user
     user_id = session['user']['id']
-    print("User id is:", user_id)
-    # Fetch the checked out items for the user from the database
-    conn = sqlite3.connect('library.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM lib_items WHERE checked_out_by = ?", (user_id,))
-    checked_out_items = cursor.fetchall()
-    conn.close()
-    print("Checkouts:", checked_out_items)
+    
+    # Call the function to fetch checked out items for the user
+    checked_out_items = get_checked_out_items(user_id)
+    
     return render_template('user_view_checkouts.html', checked_out_items=checked_out_items)
 
 @app.route('/checkin', methods=['POST'])
@@ -254,45 +232,17 @@ def checkin():
     # Get the item ID to check in from the form data
     item_id = request.form.get('item_id')
 
-    # Update the availability of the item in the database
-    conn = sqlite3.connect('library.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE lib_items SET available = ?, checked_out_by = NULL WHERE id = ?", (0, item_id))
-    conn.commit()
-    conn.close()
+    user_id = session['user']['id']
+
+    checkin_library_items(user_id, item_id)
 
     # Redirect the user back to the checkouts page
     return redirect('/user_view_checkouts')
-
-
-@app.route('/profile')
-def profile():
-   user_data = session.get('user')
-
-   if user_data:
-      # Reconstruct the user object
-      user = User(
-          user_id=user_data['id'],
-          username=user_data['username'],
-          password_hash='',
-          first_name=user_data['first_name'],
-          last_name=user_data['last_name'],
-          email=user_data['email'],
-          phone=user_data['phone'],
-          user_type=user_data['user_type']
-          )
-
-      print(user.email)
-
-      return render_template('profile.html', user_info=user)
-   else:
-      return redirect('/home', messages="Error Occurred")
 
 @app.route('/logout')
 def logout():
    session.clear()
    return redirect('/')
-
 
 if __name__ == '__main__':
    app.run(debug=True)

@@ -10,7 +10,7 @@
     <ul>
         {% for item in checked_out_items %}
         <li>{{ item[1] or 'Unknown Title' }} - {{ item[2] or 'Unknown Type' }} 
-            {% if item[5] == 0 %}
+            {% if item[5] == 1 %}
                 (Availability: Available)
             {% else %}
                 (Availability: Not Available)
