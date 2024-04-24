@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
     <style>
+        /* Determines animation/general look of flash messages */
         .flash-message {
             animation: fadeOut 5s forwards;
             list-style-type: none; /* Remove bullet points */
@@ -29,14 +30,13 @@
     <!-- Common functions available to all users -->
     <ul>
         <li><a href="/item_search">Search Library Items</a></li>
-        <!-- Add other common functions here -->
     </ul>
-
+    <!--  Patron-specific functions -->
     {% if user_info.user_type == 'patron' %}
     <p>Patron-specific functions:</p>
     <ul>
         <li><a href="/user_view_checkouts">View Current Checkouts</a></li>
-        <!-- Add other patron-specific functions here -->
+        
     </ul>
     {% endif %}
     
@@ -49,11 +49,11 @@
         <li><a href="/add_lib_item">Add Library Item</a></li>
         <li><a href="/all_users">View All Users</a></li>
         <li><a href="/user_search">Search For Users By ID/View User Checkouts</a></li>
-        <!-- Add other librarian-specific functions here -->
+        
     </ul>
     {% endif %}
 
-    <!-- Flash messages -->
+    <!-- Logic for flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <ul>
